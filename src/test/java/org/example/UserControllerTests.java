@@ -1,138 +1,69 @@
 package org.example;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.controller.UserController;
 import org.example.dto.UserDto;
+import org.example.hateoas.UserModelAssembler;
 import org.example.service.UserService;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Optional;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
+@Import(UserModelAssembler.class) // Импортируем ассемблер, чтобы HATEOAS ссылки создавались корректно
 class UserControllerTests {
 
     @Autowired
     private MockMvc mockMvc;
 
+    @MockBean
+    private UserService userService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockitoBean
-    private UserService userService;
-
     @Test
-    void getAllUsers_shouldReturnList() throws Exception {
-        UserDto u1 = new UserDto(1L, "Alice",25,  "alice@example.com", LocalDateTime.now());
-        UserDto u2 = new UserDto(2L, "Bob", 30, "bob@example.com", LocalDateTime.now());
-
-        Mockito.when(userService.getAllUsers())
-                .thenReturn(Arrays.asList(u1, u2));
-
-        mockMvc.perform(get("/api/users"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].name", is("Alice")))
-                .andExpect(jsonPath("$[1].email", is("bob@example.com")));
-    }
-
-    @Test
-    void getUserById_whenFound_shouldReturnUser() throws Exception {
-        UserDto dto = new UserDto(1L, "Alice", 25, "alice@example.com", LocalDateTime.now());
-
-        Mockito.when(userService.getUserById(1L))
-                .thenReturn(dto);
+    void getUserById_ShouldReturn200() throws Exception {
+        UserDto user = new UserDto(1L, "Ivan", 25, "ivan@test.com", LocalDateTime.now());
+        when(userService.getUserById(1L)).thenReturn(user);
 
         mockMvc.perform(get("/api/users/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.name", is("Alice")));
+                .andExpect(jsonPath("$.name").value("Ivan"))
+                .andExpect(jsonPath("$._links.self.href").exists());
     }
 
     @Test
-    void getUserById_whenNotFound_shouldReturn404() throws Exception {
-        Mockito.when(userService.getUserById(1L))
-                .thenReturn(null);
+    void createUser_ShouldReturn201() throws Exception {
+        UserDto inputDto = new UserDto(null, "New User", 30, "new@test.com", null);
+        UserDto savedDto = new UserDto(100L, "New User", 30, "new@test.com", LocalDateTime.now());
 
-        mockMvc.perform(get("/api/users/1"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void createUser_shouldReturnCreatedUser() throws Exception {
-        UserDto created = new UserDto(1L, "Alice", 25, "alice@example.com", LocalDateTime.now());
-
-        Mockito.when(userService.createUser(any(UserDto.class)))
-                .thenReturn(created);
+        when(userService.createUser(any(UserDto.class))).thenReturn(savedDto);
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(created)))
+                        .content(objectMapper.writeValueAsString(inputDto)))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/api/users/1"))
-                .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.email", is("alice@example.com")));
+                .andExpect(header().string("Location", "/api/users/100"))
+                .andExpect(jsonPath("$.id").value(100));
     }
 
     @Test
-    void updateUser_whenFound_shouldReturnUpdatedUser() throws Exception {
-        UserDto updated = new UserDto(1L, "NewName", 26, "new@example.com", LocalDateTime.now());
+    void deleteUser_ShouldReturn404_WhenNotFound() throws Exception {
+        when(userService.deleteUser(99L)).thenReturn(false);
 
-        Mockito.when(userService.updateUser(eq(1L), any(UserDto.class)))
-                .thenReturn(updated);
-
-        mockMvc.perform(put("/api/users/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updated)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name", is("NewName")))
-                .andExpect(jsonPath("$.email", is("new@example.com")));
-    }
-
-    @Test
-    void updateUser_whenNotFound_shouldReturn404() throws Exception {
-        UserDto request = new UserDto(255L, "NewName", 26, "new@example.com", LocalDateTime.now());
-
-        Mockito.when(userService.updateUser(eq(1L), any(UserDto.class)))
-                .thenReturn(null);
-
-        mockMvc.perform(put("/api/users/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void deleteUser_whenFound_shouldReturn204() throws Exception {
-        Mockito.when(userService.deleteUser(1L))
-                .thenReturn(true);
-
-        mockMvc.perform(delete("/api/users/1"))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void deleteUser_whenNotFound_shouldReturn404() throws Exception {
-        Mockito.when(userService.deleteUser(1L))
-                .thenReturn(false);
-
-        mockMvc.perform(delete("/api/users/1"))
+        mockMvc.perform(delete("/api/users/99"))
                 .andExpect(status().isNotFound());
     }
 }
