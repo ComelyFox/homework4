@@ -1,9 +1,8 @@
-package org.example.service;
+package org.example.email;
 
 import org.example.dto.UserDto;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface UserService {
 

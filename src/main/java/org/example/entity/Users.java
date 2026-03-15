@@ -1,6 +1,8 @@
 package org.example.entity;
 
 import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -11,8 +13,9 @@ public class Users {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
-    private int age;
     private String email;
+    private int age;
+
     private final LocalDateTime createdAt = LocalDateTime.now();
 
 

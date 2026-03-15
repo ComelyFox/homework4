@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.example.dto.UserDto;
 import org.example.hateoas.UserModelAssembler;
-import org.example.service.UserService;
+import org.example.email.UserService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +60,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Пользователь не найден")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<EntityModel<UserDto>> getUserById(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<UserDto>> getUserById(@PathVariable("id") Long id) {
 
         log.info("API: запрос пользователя по id={}", id);
 
@@ -100,7 +100,7 @@ public class UserController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<EntityModel<UserDto>> updateUser(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody UserDto request) {
 
         log.info("API: обновление пользователя id={}", id);
@@ -121,7 +121,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Пользователь не найден")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable("id") Long id) {
 
         log.info("API: удаление пользователя id={}", id);
 

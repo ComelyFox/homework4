@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.controller.UserController;
 import org.example.dto.UserDto;
 import org.example.hateoas.UserModelAssembler;
-import org.example.service.UserService;
+import org.example.email.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

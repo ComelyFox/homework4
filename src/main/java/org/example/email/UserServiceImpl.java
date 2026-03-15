@@ -1,4 +1,4 @@
-package org.example.service;
+package org.example.email;
 
 import org.example.entity.Users;
 import org.example.dto.UserDto;
